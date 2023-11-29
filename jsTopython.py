@@ -2,12 +2,19 @@ import requests
 import schedule
 import smtplib
 import math
+import pandas as pd 
 
 def job():
     #print('The answer to life, the universe, and everything!')
     status = get_organizations()
     if status == 201:
         print("Data Sync Successfully", "Data Sync Successfull with status code 200")
+    
+    
+   
+
+    # Save the DataFrame to an Excel file
+    
 
 # def send_mail(subject, text):
 #     sender_email = 'ritikaroy85257@gmail.com'
@@ -35,61 +42,106 @@ def get_zoho_token():
             json=data
         )
         access_token = response.json()['access_token']
-        print(access_token)
+        #print(access_token)
         return access_token
     except Exception as error:
     #     subject = "Geeting Error In Faching data Webex Api"
     #     text = str(error)
 
+
     #     mail(subject, text)
         print("get org error")
+# def get_access_token(refresh_token):
+#     token_url = 'https://webexapis.com/v1/access_token'
+#     client_id = 'Cbd2bdb5877134773fa779dccf6d170908a134c3429c23022664996cd1ee2381e'
+#     client_secret = '5ce92a9d3c98575830fe4539c58fdcfa57ba8e405a6c7862dbd7cea0e82f6251'
+
+#     payload = {
+#         'grant_type': 'refresh_token',
+#         'client_id': client_id,
+#         'client_secret': client_secret,
+#         'refresh_token': refresh_token
+#     }
+
+#     response = requests.post(token_url, data=payload)
+
+#     if response.status_code == 200:
+#         access_token = response.json().get('access_token')
+#         return access_token
+#     else:
+       
+#         print(f"Error getting access token: {response.status_code}, {response.text}")
+#         return None        
 
 def get_organizations():
     zoho_new_token = get_zoho_token()
-
+    refresh_token = 'MTQ2ZmZkNDgtMmI1ZS00ZGYwLTliZWEtNzQwNjRhODVmOGIwOGU2NDVjNDItNGU2_PF84_3bf06e7b-f230-427f-9163-c54d2e428d6a'
+    # access_token = get_access_token(refresh_token)
     try:
-        response = requests.get(
-            'https://webexapis.com/v1/organizations',
-            headers={'Authorization': 'Bearer NWUxNDI4MWEtNjdiYy00MWFiLWE1NDYtNTJkNDBkZGI2ZWM2NTQ4MTI0MDEtZTFh_PF84_3bf06e7b-f230-427f-9163-c54d2e428d6a'}
-        )
-        count = 0
-        used_licence = 0
-        issued_licence = 0
-        trand_resp = 0
+            response = requests.get(
+                'https://webexapis.com/v1/organizations',
+                headers={'Authorization': f'Bearer NTY5ZmEzNzktZTRmMC00N2NjLWI3YjYtMTU5YTRjYWFjN2I5YWVlMmFmM2UtZDk1_PF84_3bf06e7b-f230-427f-9163-c54d2e428d6a'}
+            )
+            count = 0
+            used_licence = 0
+            issued_licence = 0
+            trand_resp = 0
+            data = {
+            'Display Name': [],
+            'Org ID': [],
+            'Used Licence': [],
+            'Issued Licence': [],
+            'Ticket Status': [],
+            'Health Score': [],
+            'Total Health Score': [],
+        }
 
-        for item in response.json()['items']:
-           # print(response.json())
             
-            last_response = get_licenses(item['id'], item['displayName'], zoho_new_token)
-            if last_response != None:
-                print("total array data", last_response)
+
+            for item in response.json()['items']:
+            # print(response.json())
                 
-            
+                last_response = get_licenses(item['id'], item['displayName'], zoho_new_token)
+                if last_response :
+                    used_licence += last_response[0]['usedlicence']
+                    issued_licence += last_response[0]['issuedlicence']
+                    issued_licence += last_response[0]['issuedlicence']
+                    if last_response[0]['ticketstatus']:
+                        count += 1
+                if last_response != None:
+                    data['Display Name'].append(last_response[0]['display_name'])
+                    data['Org ID'].append(last_response[0]['org_id'])
+                    data['Used Licence'].append(last_response[0]['usedlicence'])
+                    data['Issued Licence'].append(last_response[0]['issuedlicence'])
+                    data['Ticket Status'].append("Success" if last_response[0]['ticketstatus'] else "Failure")
+                    data['Health Score'].append(last_response[0]['HealthScore'])
+                    data['Total Health Score'].append(last_response[0]['totalHealthscore'])
+            df = pd.DataFrame(data)   
+            df.to_excel('healthScore2.xlsx', index=False)
+            print("Result exported") 
 
-            if last_response :
-                used_licence += last_response[0]['usedlicence']
-                issued_licence += last_response[0]['issuedlicence']
-                issued_licence += last_response[0]['issuedlicence']
-                if last_response[0]['ticketstatus']:
-                    count += 1
+                    
+                
 
-                # print("11newissuedlicence", issued_licence)
-                # print("11newusedLicence", used_licence)
-                # print("11ticketstatus", last_response[0]['ticketstatus'])
+                
 
-        for item in response.json()['items']:
-            trand_resp += update_trends(item['id'], zoho_new_token)
-            print("trandresp", trand_resp)
+                    # print("11newissuedlicence", issued_licence)
+                    # print("11newusedLicence", used_licence)
+                    # print("11ticketstatus", last_response[0]['ticketstatus'])
 
-        # print("newissuedlicence", issued_licence)
-        # print("newusedLicence", used_licence)
-        # print("trandresp", trand_resp)
+            for item in response.json()['items']:
+                trand_resp += update_trends(item['id'], zoho_new_token)
+                print("trandresp", trand_resp)
 
-        update_org_count(count, issued_licence, used_licence, trand_resp, zoho_new_token)
-        return response.status_code
+            # print("newissuedlicence", issued_licence)
+            # print("newusedLicence", used_licence)
+            # print("trandresp", trand_resp)
+
+            update_org_count(count, issued_licence, used_licence, trand_resp, zoho_new_token)
+            return response.status_code
 
     except Exception as error:
-        print("get org error", error)
+            print("get org error", error)
 
 def update_org_count(org_count, issued_licence, used_licence,health_score, trand_resp, zoho_new_token):
     new_json = {
@@ -136,11 +188,13 @@ def append_subsid(old_val, new_val):
     return total
 
 def get_licenses(org_id, display_name, zoho_new_token):
+   # refresh_token = 'MTQ2ZmZkNDgtMmI1ZS00ZGYwLTliZWEtNzQwNjRhODVmOGIwOGU2NDVjNDItNGU2_PF84_3bf06e7b-f230-427f-9163-c54d2e428d6a'
+    # access_token = get_access_token(refresh_token)
     try:
         response = requests.get(
             f'https://webexapis.com/v1/licenses?orgId={org_id}',
             headers={
-                'Authorization': 'Bearer NWUxNDI4MWEtNjdiYy00MWFiLWE1NDYtNTJkNDBkZGI2ZWM2NTQ4MTI0MDEtZTFh_PF84_3bf06e7b-f230-427f-9163-c54d2e428d6a'
+                'Authorization': f'Bearer NTY5ZmEzNzktZTRmMC00N2NjLWI3YjYtMTU5YTRjYWFjN2I5YWVlMmFmM2UtZDk1_PF84_3bf06e7b-f230-427f-9163-c54d2e428d6a'
             }
         )
         if response.status_code == 403:
@@ -336,7 +390,7 @@ def get_licenses(org_id, display_name, zoho_new_token):
                         json={"data": new_json2}
                     )
                     #print("add licenses", response1.status_code)
-                    return [{
+                    result= {
                         'usedlicence': is_used_licence_zero,
                         'issuedlicence': is_issued_licence_zero,
                         'ticketstatus': response1.status_code == 201,
@@ -344,7 +398,9 @@ def get_licenses(org_id, display_name, zoho_new_token):
                         'totalHealthscore': total_health_score,
                         'display_name': display_name,
                         'org_id':org_id
-                    }]
+                    }
+                    return[result]
+                
                     
                 except Exception as error:
                     pass
