@@ -116,9 +116,10 @@ def get_organizations():
                     data['Ticket Status'].append("Success" if last_response[0]['ticketstatus'] else "Failure")
                     data['Health Score'].append(last_response[0]['HealthScore'])
                     data['Total Health Score'].append(last_response[0]['totalHealthscore'])
-            df = pd.DataFrame(data)   
-            df.to_excel('healthScore2.xlsx', index=False)
-            print("Result exported") 
+                    
+            # df = pd.DataFrame(data)   
+            # df.to_excel('healthScore2.xlsx', index=False)
+            # print("Result exported") 
 
                     
                 
@@ -288,7 +289,8 @@ def get_licenses(org_id, display_name, zoho_new_token):
                     new_json["Professional_Subscription_Id"] = append_subsid(
                         new_json.get("Professional_Subscription_Id"), item['subscriptionId'])
                     new_json["Professional_Total_Units"] = change_value_num_to_str(
-                        new_json.get("Professional_Total_Units"), item['totalUnits'])
+                        new_json.get("Professional_Total_Units"),
+                        item['totalUnits'])
                     check_subs_id = item['subscriptionId']  
 
                 if item['name'] == "Webex Room Kit":
@@ -399,7 +401,12 @@ def get_licenses(org_id, display_name, zoho_new_token):
                         'display_name': display_name,
                         'org_id':org_id
                     }
+                    print(new_json2)
+                    df = pd.DataFrame(new_json2)   
+                    df.to_excel('healthScore3.xlsx', index=False)
+                    print("Result exported") 
                     return[result]
+                   
                 
                     
                 except Exception as error:
